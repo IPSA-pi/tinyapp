@@ -10,6 +10,13 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 }
 
+app.use(express.urlencoded({ extended: true}));
+
+app.post("/urls", (req, res) => {
+  console.log(req.body);
+  res.send("Ok");
+})
+
 app.get("/", (req, res) => {
   console.log(urlDatabase['b2xVn2']);
   res.send("Hello");
