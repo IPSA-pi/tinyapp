@@ -14,8 +14,14 @@ const urlDatabase = {
 app.use(express.urlencoded({ extended: true}));
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);
-  res.send("Ok");
+  let id = generateRandomString();
+  urlDatabase[id] = req.body.longURL;
+  res.redirect(`/urls/${id}`);
+})
+
+app.get("/u/:id", (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
 })
 
 app.get("/", (req, res) => {
