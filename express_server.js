@@ -2,6 +2,7 @@
 const express = require("express");
 const app = express();
 const PORT = 8080;
+const { generateRandomString } = require("./scripts/generateRandomString");
 
 app.set("view engine", "ejs");
 
