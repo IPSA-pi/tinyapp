@@ -30,8 +30,6 @@ app.get("/", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  console.log(req.params.id);
-
   const templateVars = { urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
