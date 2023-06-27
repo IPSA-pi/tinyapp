@@ -20,7 +20,17 @@
         <p class="card-text">
           Short URL ID: <a href="/u/<%= id %>"><%= id %></a>
         </p>
-      </div>
+        <form action="/urls/<%= id %>/update" method="POST">
+          <input
+            class="form-control"
+            type="text"
+            name="update"
+            placeholder="http://"
+            style="width: 300px; margin: 1em"
+          />
+          <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+      </div>  
       <div class="card-footer text-muted"></div>
     </div>
     <!-- Bootstrap JS -->

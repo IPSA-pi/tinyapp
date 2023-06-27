@@ -13,17 +13,24 @@ const urlDatabase = {
 
 app.use(express.urlencoded({ extended: true}));
 
+//
 app.post("/urls", (req, res) => {
   let id = generateRandomString();
   urlDatabase[id] = req.body.longURL;
   res.redirect(`/urls/${id}`);
 })
 
+app.post("/urls/:id/update", (req, res) => {
+  let id = req.params.id;
+  urlDatabase[id] = req.body.update;
+  res.redirect('/urls');
+})
 app.post("/urls/:id/delete", (req, res) => {
   let id = req.params.id;
   delete urlDatabase[id];
    res.redirect(`/urls`);
 })
+
 
 app.get("/u/:id", (req, res) => {
   const longURL = urlDatabase[req.params.id];
