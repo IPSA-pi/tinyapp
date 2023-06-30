@@ -71,11 +71,17 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
+//    NEW LOGIN
+
+app.get('/login', (req, res) => {
+  res.render('login');
+});
+
 //    LOGIN
 
-app.post('/login', (req, res) => {
-  res.redirect('/urls');
-});
+// app.post('/login', (req, res) => {
+//   res.redirect('/urls');
+// });
 
 //    LOGOUT
 
