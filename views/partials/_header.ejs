@@ -17,8 +17,8 @@
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <form action="/login" method="post">
-          <% if(username !== 'undefined') { %>
-            <p>Logged in as: <%= username %></p>
+          <% if(user !== 'undefined') { %>
+            <p>Logged in as: <%= user.email %></p>
             <form action="/logout" method="post">
               <button type="submit">Logout</button>
             </form>
