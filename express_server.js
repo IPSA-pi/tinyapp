@@ -5,12 +5,12 @@ const app = express();
 const PORT = 8080;
 const { generateRandomString } = require('./scripts/generateRandomString');
 
-app.set('view engine', 'ejs');
 
 const urlDatabase = {
   b2xVn2: 'http://www.lighthouselabs.ca',
   '9sm5xK': 'http://www.google.com',
 };
+app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -32,6 +32,13 @@ app.post('/urls/:id/delete', (req, res) => {
   const { id } = req.params;
   delete urlDatabase[id];
   res.redirect('/urls');
+});
+
+app.get('/register', (req, res) => {
+  const templateVars = {
+    username: req.cookies.username,
+  };
+  res.render('register', templateVars);
 });
 
 app.post('/login', (req, res) => {
