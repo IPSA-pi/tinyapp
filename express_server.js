@@ -1,10 +1,9 @@
 const express = require('express');
 const cookieParser = require('cookie-parser');
-const { getUserByEmail } = require('./helper');
+const { getUserByEmail, generateRandomString } = require('./helper');
 
 const app = express();
 const PORT = 8080;
-const { generateRandomString } = require('./scripts/generateRandomString');
 
 const urlDatabase = {
   b2xVn2: 'http://www.lighthouselabs.ca',
@@ -96,8 +95,6 @@ app.get('/urls', (req, res) => {
   const templateVars = {
     urls: urlDatabase,
     user: users[req.cookies.user_id],
-    user: users[req.cookies.user_id],
-
   };
 
   res.render('urls_index', templateVars);
