@@ -25,7 +25,6 @@ const generateRandomString = () => {
 
 const getUserByEmail = (email, users) => {
   // eslint suggests Object.{keys, values, entries}
-  console.log(Object.keys(users));
 
   for (const user in users) {
     if (users[user].email === email) {

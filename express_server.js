@@ -108,11 +108,12 @@ app.get('/urls/:id', (req, res) => {
 app.get('/register', (req, res) => {
   const userLoggedIn = req.cookies.user_id;
   if (!userLoggedIn) {
-    res.render('register');
+    return res.render('register');
   }
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
+// Create a new user and add to the users database.
 app.post('/register', (req, res) => {
   const rndmId = generateRandomString();
   const user = `user${rndmId}`;
@@ -120,10 +121,10 @@ app.post('/register', (req, res) => {
   const userExists = getUserByEmail(email, users);
 
   if (password === '' || email === '') {
-    res.status(400).send('Please provide email and password.');
+    return res.status(400).send('Please provide email and password.');
   }
   if (userExists) {
-    res.status(400).send('User already exists');
+    return res.status(400).send('User already exists');
   }
 
   users[user] = {
@@ -141,7 +142,7 @@ app.post('/register', (req, res) => {
 app.get('/login', (req, res) => {
   const userLoggedIn = req.cookies.user_id;
   if (!userLoggedIn) {
-    res.render('login');
+    return res.render('login');
   }
   res.redirect('/urls');
 });
@@ -152,15 +153,15 @@ app.post('/login', (req, res) => {
 
   // handle user not providing email and/or password
   if (email === '' || formPassword === '') {
-    res.status(403).send('Please provide credentials');
+    return res.status(403).send('Please provide credentials');
   }
   // handle if email doesn't matches user
   if (!userExists) {
-    res.status(403).send('Invalid credentials');
+    return res.status(403).send('Invalid credentials');
   }
 
   if (formPassword !== userExists.password) {
-    res.status(403).send('Incorrect password');
+    return res.status(403).send('Incorrect password');
   }
 
   res.cookie('user_id', userExists.userID);
