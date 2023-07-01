@@ -9,8 +9,17 @@ const PORT = 8080;
 const { getUserByEmail, generateRandomString } = require('./helper');
 
 const urlDatabase = {
-  b2xVn2: 'http://www.lighthouselabs.ca',
-  '9sm5xK': 'http://www.google.com',
+  // eslint-disable-next-line quote-props
+  'b2xVn2': {
+    url_id: 'b2xVn2',
+    longURL: 'http://www.lighthouselabs.ca',
+    userID: 'user1',
+  },
+  '9sm5xK': {
+    url_id: '9sm5xK',
+    longURL: 'http://www.google.com',
+    userID: 'user2',
+  },
 };
 
 const users = {
@@ -38,16 +47,31 @@ app.use(cookieParser());
 //    URLS
 
 app.get('/urls', (req, res) => {
+  const userLoggedIn = req.cookies.user_id;
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  const urlsForUser = (id) => {
+    userURLs = {};
+    for (const url in urlDatabase) {
+      if (urlDatabase[url].userID === id) {
+        userURLs[url] = urlDatabase[url];
+      }
+    }
+    return userURLs;
+  };
+
   const templateVars = {
-    urls: urlDatabase,
+    urls: urlsForUser(userLoggedIn),
     user: users[req.cookies.user_id],
     email: users[req.cookies.user_id].email,
   };
-  res.render('urls_index', templateVars);
+  return res.render('urls_index', templateVars);
 });
 
 app.get('/u/:id', (req, res) => {
-  const longURL = urlDatabase[req.params.id];
+  const { longURL } = urlDatabase[req.params.id];
   if (longURL === undefined) {
     res.send('invalid url');
   }
@@ -57,24 +81,50 @@ app.get('/u/:id', (req, res) => {
 app.post('/urls', (req, res) => {
   const userLoggedIn = req.cookies.user_id;
   if (!userLoggedIn) {
-    res.redirect('/login');
+    return res.redirect('/login');
   }
 
   const id = generateRandomString();
-  urlDatabase[id] = req.body.longURL;
-  res.redirect(`/urls/${id}`);
+  urlDatabase[id].longURL = req.body.formLongURL;
+  urlDatabase[id].url_id = id;
+  urlDatabase[id].userID = userLoggedIn;
+
+
+  return res.redirect(`/urls/${id}`);
 });
 
 app.post('/urls/:id/update', (req, res) => {
+  const userLoggedIn = req.cookies.user_id;
   const { id } = req.params;
-  urlDatabase[id] = req.body.update;
-  res.redirect('/urls');
+
+  if (!urlDatabase[id]) {
+    return res.status(404).send("id not found");
+  }
+
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  if (userLoggedIn !== urlDatabase[id].userID) {
+    return res.status(403).send('You do not have permission to delete this url');
+  }
+  urlDatabase[id].longURL = req.body.update;
+  return res.redirect('/urls');
 });
 
 app.post('/urls/:id/delete', (req, res) => {
+  const userLoggedIn = req.cookies.user_id;
   const { id } = req.params;
+
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  if (userLoggedIn !== urlDatabase[id].userID) {
+    return res.status(403).send('You do not have permission to delete this url');
+  }
   delete urlDatabase[id];
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
 app.get('/urls.json', (req, res) => {
@@ -94,9 +144,20 @@ app.get('/urls/new', (req, res) => {
 });
 
 app.get('/urls/:id', (req, res) => {
+  const userLoggedIn = req.cookies.user_id;
+  const { id } = req.params;
+
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  if (userLoggedIn !== urlDatabase[id].userID) {
+    return res.send('You do not have permission to view this url');
+  }
+
   const templateVars = {
     id: req.params.id,
-    longURL: urlDatabase[req.params.id],
+    longURL: urlDatabase[req.params.id].longURL,
     user: users[req.cookies.user_id],
     email: users[req.cookies.user_id].email,
   };
@@ -134,7 +195,7 @@ app.post('/register', (req, res) => {
   };
 
   res.cookie('user_id', user);
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
 //    NEW LOGIN
@@ -144,7 +205,7 @@ app.get('/login', (req, res) => {
   if (!userLoggedIn) {
     return res.render('login');
   }
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
 app.post('/login', (req, res) => {
@@ -165,7 +226,7 @@ app.post('/login', (req, res) => {
   }
 
   res.cookie('user_id', userExists.userID);
-  res.redirect('/urls');
+  return res.redirect('/urls');
 });
 
 //    LOGOUT
