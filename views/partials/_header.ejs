@@ -1,4 +1,4 @@
-<header>
+  <header>
   <nav class="navbar navbar-expand-md navbar-dark bg-success">
     <a class="navbar-brand" href="/urls">TinyApp</a>
     <button
@@ -16,8 +16,14 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <% if (user) { %>  
+        <p>Logged in as <%= email %></p>
+        <button type="button"><a href="/login">Logout</a></button>
+        <% } else { %>
         <button type="button"><a href="/login">Login</a></button>
         <button type="button"><a href="/register">Register</a></button>
+        <% } %>
+
       </div>
     </div>
   </nav>
