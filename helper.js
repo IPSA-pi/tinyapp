@@ -24,8 +24,7 @@ const generateRandomString = () => {
 };
 
 const getUserByEmail = (email, users) => {
-  // eslint suggests Object.{keys, values, entries}
-
+  // for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array.eslintno-restricted-syntax
   for (const user in users) {
     if (users[user].email === email) {
       return users[user];

@@ -1,6 +1,5 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-// const cookieParser = require('cookie-parser');
 const cookieSession = require('cookie-session');
 
 // Setup server
@@ -40,7 +39,6 @@ const users = {
 app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
-// app.use(cookieParser());
 app.use(cookieSession({
   name: 'user_id',
   keys: ['a0afaea5-9f29-45c5-bb9a-e69c13e87345', '0b63a547-6727-4879-b80d-3db65a3393df'],
@@ -52,7 +50,7 @@ app.use(cookieSession({
 //
 
 //    REGISTER
-
+//  Render register view
 app.get('/register', (req, res) => {
   const userLoggedIn = req.session.user_id;
   if (!userLoggedIn) {
@@ -82,14 +80,12 @@ app.post('/register', (req, res) => {
     hashedPassword,
   };
 
-  console.log(users[user]);
-  // res.cookie('user_id', user);
   req.session.user_id = user;
   return res.redirect('/urls');
 });
 
 //    LOGIN
-
+// Render login view
 app.get('/login', (req, res) => {
   const userLoggedIn = req.session.user_id;
   if (!userLoggedIn) {
@@ -98,6 +94,7 @@ app.get('/login', (req, res) => {
   return res.redirect('/urls');
 });
 
+// handle user login
 app.post('/login', (req, res) => {
   const { email, formPassword } = req.body;
   const userExists = getUserByEmail(email, users);
@@ -110,30 +107,30 @@ app.post('/login', (req, res) => {
   if (!userExists) {
     return res.status(403).send('Invalid credentials');
   }
-
+  // verify hashed password
   if (!bcrypt.compareSync(formPassword, userExists.hashedPassword)) {
     return res.status(403).send('Incorrect password');
   }
-
-  // res.cookie('user_id', userExists.userID);
+  // set session cookie
   req.session.user_id = userExists.userID;
   return res.redirect('/urls');
 });
 
 //    LOGOUT
 app.post('/logout', (req, res) => {
-  // res.clearCookie('user_id');
   req.session = null;
   res.redirect('/login');
 });
-//    URLS
 
+//    URLS
+// Render urls view according to user logged in
 app.get('/urls', (req, res) => {
   const userLoggedIn = req.session.user_id;
   if (!userLoggedIn) {
     return res.send('Please login or register to view urls.');
   }
 
+  // filter db to get only urls created by userLoggedIn
   const urlsForUser = (id) => {
     userURLs = {};
     for (const url in urlDatabase) {
@@ -152,6 +149,7 @@ app.get('/urls', (req, res) => {
   return res.render('urls_index', templateVars);
 });
 
+// redirect to longUrl using short URL
 app.get('/u/:id', (req, res) => {
   const { longURL } = urlDatabase[req.params.id];
   if (longURL === undefined) {
@@ -160,6 +158,7 @@ app.get('/u/:id', (req, res) => {
   res.redirect(longURL);
 });
 
+// handle new short URL generation
 app.post('/urls', (req, res) => {
   const userLoggedIn = req.session.user_id;
   if (!userLoggedIn) {
@@ -177,6 +176,7 @@ app.post('/urls', (req, res) => {
   return res.redirect(`/urls/${id}`);
 });
 
+// handle url update
 app.post('/urls/:id/update', (req, res) => {
   const userLoggedIn = req.session.user_id;
   const { id } = req.params;
@@ -196,6 +196,7 @@ app.post('/urls/:id/update', (req, res) => {
   return res.redirect('/urls');
 });
 
+// handle delete url
 app.post('/urls/:id/delete', (req, res) => {
   const userLoggedIn = req.session.user_id;
   const { id } = req.params;
@@ -227,6 +228,7 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
 });
 
+// render specified url
 app.get('/urls/:id', (req, res) => {
   const userLoggedIn = req.session.user_id;
   const { id } = req.params;
