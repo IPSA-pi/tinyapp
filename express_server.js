@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const cookieParser = require('cookie-parser');
+// const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 
 // Setup server
 const app = express();
@@ -39,138 +40,21 @@ const users = {
 app.set('view engine', 'ejs');
 
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// app.use(cookieParser());
+app.use(cookieSession({
+  name: 'user_id',
+  keys: ['a0afaea5-9f29-45c5-bb9a-e69c13e87345', '0b63a547-6727-4879-b80d-3db65a3393df'],
+  maxAge: 24 * 60 * 60 * 1000,
+}));
 
 //
 // 🛣️🛣️🛣️ ROUTES 🛣️🛣️🛣️🛣️
 //
 
-//    URLS
-
-app.get('/urls', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
-  if (!userLoggedIn) {
-    return res.send('Please login or register to view urls.');
-  }
-
-  const urlsForUser = (id) => {
-    userURLs = {};
-    for (const url in urlDatabase) {
-      if (urlDatabase[url].userID === id) {
-        userURLs[url] = urlDatabase[url];
-      }
-    }
-    return userURLs;
-  };
-
-  const templateVars = {
-    urls: urlsForUser(userLoggedIn),
-    user: users[req.cookies.user_id],
-    email: users[req.cookies.user_id].email,
-  };
-  return res.render('urls_index', templateVars);
-});
-
-app.get('/u/:id', (req, res) => {
-  const { longURL } = urlDatabase[req.params.id];
-  if (longURL === undefined) {
-    res.send('invalid url');
-  }
-  res.redirect(longURL);
-});
-
-app.post('/urls', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
-  if (!userLoggedIn) {
-    return res.redirect('/login');
-  }
-
-  const { formLongURL } = req.body;
-  const id = generateRandomString();
-
-  urlDatabase[id] = {};
-  urlDatabase[id].url_id = id;
-  urlDatabase[id].longURL = formLongURL;
-  urlDatabase[id].userID = userLoggedIn;
-
-  return res.redirect(`/urls/${id}`);
-});
-
-app.post('/urls/:id/update', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
-  const { id } = req.params;
-
-  if (!urlDatabase[id]) {
-    return res.status(404).send('id not found');
-  }
-
-  if (!userLoggedIn) {
-    return res.send('Please login or register to view urls.');
-  }
-
-  if (userLoggedIn !== urlDatabase[id].userID) {
-    return res.status(403).send('You do not have permission to delete this url');
-  }
-  urlDatabase[id].longURL = req.body.update;
-  return res.redirect('/urls');
-});
-
-app.post('/urls/:id/delete', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
-  const { id } = req.params;
-
-  if (!userLoggedIn) {
-    return res.send('Please login or register to view urls.');
-  }
-
-  if (userLoggedIn !== urlDatabase[id].userID) {
-    return res.status(403).send('You do not have permission to delete this url');
-  }
-  delete urlDatabase[id];
-  return res.redirect('/urls');
-});
-
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get('/urls/new', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
-  if (!userLoggedIn) {
-    res.redirect('/login');
-  }
-  const templateVars = {
-    user: users[req.cookies.user_id],
-    email: users[req.cookies.user_id].email,
-  };
-  res.render('urls_new', templateVars);
-});
-
-app.get('/urls/:id', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
-  const { id } = req.params;
-
-  if (!userLoggedIn) {
-    return res.send('Please login or register to view urls.');
-  }
-
-  if (userLoggedIn !== urlDatabase[id].userID) {
-    return res.send('You do not have permission to view this url');
-  }
-
-  const templateVars = {
-    id: req.params.id,
-    longURL: urlDatabase[req.params.id].longURL,
-    user: users[req.cookies.user_id],
-    email: users[req.cookies.user_id].email,
-  };
-  return res.render('urls_show', templateVars);
-});
-
 //    REGISTER
 
 app.get('/register', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
+  const userLoggedIn = req.session.user_id;
   if (!userLoggedIn) {
     return res.render('register');
   }
@@ -199,14 +83,15 @@ app.post('/register', (req, res) => {
   };
 
   console.log(users[user]);
-  res.cookie('user_id', user);
+  // res.cookie('user_id', user);
+  req.session.user_id = user;
   return res.redirect('/urls');
 });
 
-//    NEW LOGIN
+//    LOGIN
 
 app.get('/login', (req, res) => {
-  const userLoggedIn = req.cookies.user_id;
+  const userLoggedIn = req.session.user_id;
   if (!userLoggedIn) {
     return res.render('login');
   }
@@ -230,15 +115,137 @@ app.post('/login', (req, res) => {
     return res.status(403).send('Incorrect password');
   }
 
-  res.cookie('user_id', userExists.userID);
+  // res.cookie('user_id', userExists.userID);
+  req.session.user_id = userExists.userID;
   return res.redirect('/urls');
 });
 
 //    LOGOUT
-// :( the cookie is not being removed after redirect to /login
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  // res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/login');
+});
+//    URLS
+
+app.get('/urls', (req, res) => {
+  const userLoggedIn = req.session.user_id;
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  const urlsForUser = (id) => {
+    userURLs = {};
+    for (const url in urlDatabase) {
+      if (urlDatabase[url].userID === id) {
+        userURLs[url] = urlDatabase[url];
+      }
+    }
+    return userURLs;
+  };
+
+  const templateVars = {
+    urls: urlsForUser(userLoggedIn),
+    user: users[req.session.user_id],
+    email: users[req.session.user_id].email,
+  };
+  return res.render('urls_index', templateVars);
+});
+
+app.get('/u/:id', (req, res) => {
+  const { longURL } = urlDatabase[req.params.id];
+  if (longURL === undefined) {
+    res.send('invalid url');
+  }
+  res.redirect(longURL);
+});
+
+app.post('/urls', (req, res) => {
+  const userLoggedIn = req.session.user_id;
+  if (!userLoggedIn) {
+    return res.redirect('/login');
+  }
+
+  const { formLongURL } = req.body;
+  const id = generateRandomString();
+
+  urlDatabase[id] = {};
+  urlDatabase[id].url_id = id;
+  urlDatabase[id].longURL = formLongURL;
+  urlDatabase[id].userID = userLoggedIn;
+
+  return res.redirect(`/urls/${id}`);
+});
+
+app.post('/urls/:id/update', (req, res) => {
+  const userLoggedIn = req.session.user_id;
+  const { id } = req.params;
+
+  if (!urlDatabase[id]) {
+    return res.status(404).send('id not found');
+  }
+
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  if (userLoggedIn !== urlDatabase[id].userID) {
+    return res.status(403).send('You do not have permission to delete this url');
+  }
+  urlDatabase[id].longURL = req.body.update;
+  return res.redirect('/urls');
+});
+
+app.post('/urls/:id/delete', (req, res) => {
+  const userLoggedIn = req.session.user_id;
+  const { id } = req.params;
+
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  if (userLoggedIn !== urlDatabase[id].userID) {
+    return res.status(403).send('You do not have permission to delete this url');
+  }
+  delete urlDatabase[id];
+  return res.redirect('/urls');
+});
+
+app.get('/urls.json', (req, res) => {
+  res.json(urlDatabase);
+});
+
+app.get('/urls/new', (req, res) => {
+  const userLoggedIn = req.session.user_id;
+  if (!userLoggedIn) {
+    res.redirect('/login');
+  }
+  const templateVars = {
+    user: users[req.session.user_id],
+    email: users[req.session.user_id].email,
+  };
+  res.render('urls_new', templateVars);
+});
+
+app.get('/urls/:id', (req, res) => {
+  const userLoggedIn = req.session.user_id;
+  const { id } = req.params;
+
+  if (!userLoggedIn) {
+    return res.send('Please login or register to view urls.');
+  }
+
+  if (userLoggedIn !== urlDatabase[id].userID) {
+    return res.send('You do not have permission to view this url');
+  }
+
+  const templateVars = {
+    id: req.params.id,
+    longURL: urlDatabase[req.params.id].longURL,
+    user: users[req.session.user_id],
+    email: users[req.session.user_id].email,
+  };
+  return res.render('urls_show', templateVars);
 });
 
 // EXTRA ROUTES
