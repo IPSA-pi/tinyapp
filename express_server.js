@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const cookieParser = require('cookie-parser');
 
 // Setup server
@@ -23,16 +24,16 @@ const urlDatabase = {
 };
 
 const users = {
-  user1: {
-    userID: 'user1',
-    email: 'a@b.net',
-    password: 'pipa',
-  },
-  user2: {
-    userID: 'user2',
-    email: 'b@b.net',
-    password: 'popa',
-  },
+  // user1: {
+  //   userID: 'user1',
+  //   email: 'a@b.net',
+  //   password: 'pipa',
+  // },
+  // user2: {
+  //   userID: 'user2',
+  //   email: 'b@b.net',
+  //   password: 'popa',
+  // },
 };
 
 app.set('view engine', 'ejs');
@@ -84,11 +85,13 @@ app.post('/urls', (req, res) => {
     return res.redirect('/login');
   }
 
+  const { formLongURL } = req.body;
   const id = generateRandomString();
-  urlDatabase[id].longURL = req.body.formLongURL;
-  urlDatabase[id].url_id = id;
-  urlDatabase[id].userID = userLoggedIn;
 
+  urlDatabase[id] = {};
+  urlDatabase[id].url_id = id;
+  urlDatabase[id].longURL = formLongURL;
+  urlDatabase[id].userID = userLoggedIn;
 
   return res.redirect(`/urls/${id}`);
 });
@@ -98,7 +101,7 @@ app.post('/urls/:id/update', (req, res) => {
   const { id } = req.params;
 
   if (!urlDatabase[id]) {
-    return res.status(404).send("id not found");
+    return res.status(404).send('id not found');
   }
 
   if (!userLoggedIn) {
@@ -161,7 +164,7 @@ app.get('/urls/:id', (req, res) => {
     user: users[req.cookies.user_id],
     email: users[req.cookies.user_id].email,
   };
-  res.render('urls_show', templateVars);
+  return res.render('urls_show', templateVars);
 });
 
 //    REGISTER
@@ -179,6 +182,7 @@ app.post('/register', (req, res) => {
   const rndmId = generateRandomString();
   const user = `user${rndmId}`;
   const { email, password } = req.body;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   const userExists = getUserByEmail(email, users);
 
   if (password === '' || email === '') {
@@ -191,9 +195,10 @@ app.post('/register', (req, res) => {
   users[user] = {
     userID: user,
     email,
-    password,
+    hashedPassword,
   };
 
+  console.log(users[user]);
   res.cookie('user_id', user);
   return res.redirect('/urls');
 });
@@ -221,7 +226,7 @@ app.post('/login', (req, res) => {
     return res.status(403).send('Invalid credentials');
   }
 
-  if (formPassword !== userExists.password) {
+  if (!bcrypt.compareSync(formPassword, userExists.hashedPassword)) {
     return res.status(403).send('Incorrect password');
   }
 
