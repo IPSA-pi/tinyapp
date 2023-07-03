@@ -148,8 +148,6 @@ app.get('/urls', (req, res) => {
   return res.render('urls_index', templateVars);
 });
 
-
-
 // handle new short URL generation
 app.post('/urls', (req, res) => {
   const userLoggedIn = req.session.user_id;
@@ -253,7 +251,11 @@ app.get('/urls/:id', (req, res) => {
 // EXTRA ROUTES
 
 app.get('/', (req, res) => {
-  res.send('Hello');
+  const userLoggedIn = req.session.user_id;
+  if (userLoggedIn) {
+    return res.redirect('/urls');
+  }
+  return res.redirect('/login');
 });
 
 app.get('/hello', (req, res) => {
