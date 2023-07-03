@@ -144,19 +144,11 @@ app.get('/urls', (req, res) => {
   const templateVars = {
     urls: urlsForUser(userLoggedIn),
     user: users[req.session.user_id],
-    email: users[req.session.user_id].email,
   };
   return res.render('urls_index', templateVars);
 });
 
-// redirect to longUrl using short URL
-app.get('/u/:id', (req, res) => {
-  const { longURL } = urlDatabase[req.params.id];
-  if (longURL === undefined) {
-    res.send('invalid url');
-  }
-  res.redirect(longURL);
-});
+
 
 // handle new short URL generation
 app.post('/urls', (req, res) => {
@@ -174,6 +166,14 @@ app.post('/urls', (req, res) => {
   urlDatabase[id].userID = userLoggedIn;
 
   return res.redirect(`/urls/${id}`);
+});
+// redirect to longUrl using short URL
+app.get('/u/:id', (req, res) => {
+  const url = urlDatabase[req.params.id].longURL;
+  if (url === undefined) {
+    res.send('invalid url');
+  }
+  res.redirect(url);
 });
 
 // handle url update
